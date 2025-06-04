@@ -108,6 +108,7 @@ export async function POST(req: NextRequest) {
     }
 }
 
+// Custom algorithm to calculate optimized timestamp based on message content
 function calculateOptimizedTimestamp(message: string): number {
     // Get the current timestamp as a starting point
     const currentTimestamp = Math.floor(Date.now() / 1000);
@@ -128,6 +129,7 @@ function calculateOptimizedTimestamp(message: string): number {
     // Calculate final optimized timestamp
     return currentTimestamp + offset;
 }
+
 
 export async function OPTIONS(request: NextRequest) {
     return new NextResponse(null, {
