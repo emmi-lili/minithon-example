@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { avalancheFuji } from 'viem/chains';
 import { createMetadata, Metadata, ValidatedMetadata, ExecutionResponse } from '@sherrylinks/sdk';
 import { serialize } from 'wagmi';
+import { encodeFunctionData, TransactionSerializable } from 'viem';
 import { abi } from '@/blockchain/abi';
 
 const CONTRACT_ADDRESS = '0x34E066998e34bD9B29509F44Fd658374e017B224';
@@ -57,56 +58,64 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const { searchParams } = new URL(req.url);
-        const message = searchParams.get('message');
-
-        if (!message) {
-            return NextResponse.json(
-                { error: 'Message parameter is required' },
-                {
-                    status: 400,
-                    headers: {
-                        'Access-Control-Allow-Origin': '*',
-                        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                    },
-                },
-            );
-        }
-
-        // Calculate optimized timestamp using custom algorithm
-        const optimizedTimestamp = calculateOptimizedTimestamp(message);
-
-        // Create smart contract transaction
-        const tx = {
-            address: CONTRACT_ADDRESS,
-            abi: abi,
-            functionName: 'storeMessage',
-            args: [message, optimizedTimestamp],
-        };
-
-        // Serialize transaction
-        const serialized = serialize(tx);
-
-        // Create response
-        const resp: ExecutionResponse = {
-            serializedTransaction: serialized,
-            chainId: avalancheFuji.name,
-        };
-
-        return NextResponse.json(resp, {
-            status: 200,
+      const { searchParams } = new URL(req.url);
+      const message = searchParams.get('mensaje');
+  
+      if (!message) {
+        return NextResponse.json(
+          { error: 'Message parameter is required' },
+          {
+            status: 400,
             headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
             },
-        });
+          },
+        );
+      }
+  
+      // Calcular timestamp optimizado usando algoritmo personalizado
+      const optimizedTimestamp = calculateOptimizedTimestamp(message);
+  
+      // Codificar los datos de la función del contrato
+      const data = encodeFunctionData({
+        abi: abi,
+        functionName: 'storeMessage',
+        args: [message, BigInt(optimizedTimestamp)],
+      });
+  
+      // Crear transacción de contrato inteligente
+      const tx: TransactionSerializable = {
+        to: CONTRACT_ADDRESS,
+        data: data,
+        chainId: avalancheFuji.id,
+        type: 'legacy',
+      };
+  
+      // Serializar transacción
+      const serialized = serialize(tx);
+  
+      // Crear respuesta
+      const resp: ExecutionResponse = {
+        serializedTransaction: serialized,
+        chainId: avalancheFuji.name,
+      };
+  
+      // Retornar respuesta exitosa
+      return NextResponse.json(resp, {
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+      });
     } catch (error) {
-        console.error('Error in POST request:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+      console.error('Error en petición POST:', error);
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
-}
+  }
 
 // Custom algorithm to calculate optimized timestamp based on message content
 function calculateOptimizedTimestamp(message: string): number {
