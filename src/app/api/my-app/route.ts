@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
       const { searchParams } = new URL(req.url);
-      const message = searchParams.get('mensaje');
+      const message = searchParams.get('message');
   
       if (!message) {
         return NextResponse.json(
@@ -75,17 +75,17 @@ export async function POST(req: NextRequest) {
         );
       }
   
-      // Calcular timestamp optimizado usando algoritmo personalizado
+      // Calculate optimized timestamp using custom algorithm
       const optimizedTimestamp = calculateOptimizedTimestamp(message);
   
-      // Codificar los datos de la función del contrato
+      // Encode the contract function data
       const data = encodeFunctionData({
         abi: abi,
         functionName: 'storeMessage',
         args: [message, BigInt(optimizedTimestamp)],
       });
   
-      // Crear transacción de contrato inteligente
+      // Create smart contract transaction
       const tx: TransactionSerializable = {
         to: CONTRACT_ADDRESS,
         data: data,
@@ -93,16 +93,15 @@ export async function POST(req: NextRequest) {
         type: 'legacy',
       };
   
-      // Serializar transacción
+      // Serialize transaction
       const serialized = serialize(tx);
   
-      // Crear respuesta
+      // Create response
       const resp: ExecutionResponse = {
         serializedTransaction: serialized,
         chainId: avalancheFuji.name,
       };
   
-      // Retornar respuesta exitosa
       return NextResponse.json(resp, {
         status: 200,
         headers: {
@@ -112,7 +111,7 @@ export async function POST(req: NextRequest) {
         },
       });
     } catch (error) {
-      console.error('Error en petición POST:', error);
+      console.error('Error in POST request:', error);
       return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
   }
